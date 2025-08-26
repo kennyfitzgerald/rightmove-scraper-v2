@@ -1,0 +1,28 @@
+{
+  "example_searches": {
+    "openrent": [
+      {
+        "description": "OpenRent London 1-bed under £1500",
+        "url": "https://www.openrent.com/properties-to-rent/london?term=London&bedrooms=1&max_rent=1500",
+        "notes": "Search for 1-bedroom properties in London under £1500/month"
+      },
+      {
+        "description": "OpenRent Manchester 2-bed", 
+        "url": "https://www.openrent.com/properties-to-rent/manchester?term=Manchester&bedrooms=2",
+        "notes": "Search for 2-bedroom properties in Manchester"
+      }
+    ],
+    "rightmove": [
+      {
+        "description": "Rightmove London Zone 2-3",
+        "url": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=REGION%5E61294&maxBedrooms=2&minBedrooms=1&maxPrice=2000&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=",
+        "notes": "Example Rightmove search - adjust parameters as needed"
+      }
+    ]
+  },
+  "instructions": {
+    "openrent": "Go to openrent.com, use filters, copy the resulting URL",
+    "rightmove": "Go to rightmove.co.uk, use filters, copy the resulting URL",
+    "telegram_setup": "Create bot with @BotFather, get token, add bot to groups/chats, get chat IDs from getUpdates API"
+  }
+}

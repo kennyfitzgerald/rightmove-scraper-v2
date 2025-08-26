@@ -1,0 +1,86 @@
+# Property Scraper GitHub Actions Workflow
+# 
+# This workflow runs a Selenium-based property scraper that:
+# 1. Downloads the previous database from artifacts to avoid duplicate notifications
+# 2. Scrapes Rightmove and OpenRent using headless Chrome for JavaScript rendering
+# 3. Calculates per-person pricing by dividing total rent by bedroom count
+# 4. Sends Telegram notifications for new properties within budget
+# 5. Uploads the updated database for the next run
+#
+# Runs every 30 minutes automatically, or can be triggered manually
+
+name: Property Scraper
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  GOOGLE_SHEETS_CREDENTIALS_JSON: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS_JSON }}
+  GOOGLE_SHEETS_URL: ${{ secrets.GOOGLE_SHEETS_URL }}
+
+jobs:
+  scrape-properties:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker-compose build property-scraper
+        
+    - name: Create data directory
+      run: mkdir -p data
+      
+    - name: Download previous database (if exists)
+      continue-on-error: true
+      run: |
+        # Try to download the database from the previous run
+        # This step will fail on the first run, which is expected
+        gh api repos/${{ github.repository }}/actions/artifacts \
+          --jq '.artifacts[] | select(.name=="property-database") | select(.expired==false) | .archive_download_url' \
+          | head -1 \
+          | xargs -I {} gh api {} > database.zip || true
+        if [ -f database.zip ]; then
+          unzip -o database.zip -d ./data/ || true
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Test configuration
+      run: |
+        docker-compose run --rm \
+          -e TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+          -e GOOGLE_SHEETS_CREDENTIALS_JSON="$GOOGLE_SHEETS_CREDENTIALS_JSON" \
+          property-scraper python src/main.py --test-config --sheets-url "$GOOGLE_SHEETS_URL"
+        
+    - name: Run property scraper
+      run: |
+        docker-compose run --rm \
+          -e TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+          -e GOOGLE_SHEETS_CREDENTIALS_JSON="$GOOGLE_SHEETS_CREDENTIALS_JSON" \
+          property-scraper python src/main.py --run-once --sheets-url "$GOOGLE_SHEETS_URL"
+        
+    - name: Upload database artifact
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: property-database
+        path: ./data/properties.db
+        retention-days: 30
+        
+    - name: Upload logs
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: scraper-logs
+        path: ./data/scraper.log
+        retention-days: 7

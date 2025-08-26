@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  property-scraper:
+    build: .
+    container_name: property-scraper
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - GOOGLE_SHEETS_CREDENTIALS_JSON=${GOOGLE_SHEETS_CREDENTIALS_JSON}
+      - ENVIRONMENT=production
+    restart: unless-stopped
+
+  property-scraper-dev:
+    build: .
+    container_name: property-scraper-dev
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./tests:/app/tests
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - GOOGLE_SHEETS_CREDENTIALS_JSON=${GOOGLE_SHEETS_CREDENTIALS_JSON}
+      - ENVIRONMENT=development
+    command: python src/main.py --test-mode
+    profiles:
+      - dev
