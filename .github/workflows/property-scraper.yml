@@ -70,7 +70,7 @@ jobs:
           property-scraper python src/main.py --run-once --sheets-url "$GOOGLE_SHEETS_URL"
         
     - name: Upload database artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: property-database
@@ -78,7 +78,7 @@ jobs:
         retention-days: 30
         
     - name: Upload logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: scraper-logs
