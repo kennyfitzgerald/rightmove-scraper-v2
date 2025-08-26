@@ -35,7 +35,7 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker-compose build property-scraper
+        docker compose build property-scraper
         
     - name: Create data directory
       run: mkdir -p data
@@ -57,14 +57,14 @@ jobs:
         
     - name: Test configuration
       run: |
-        docker-compose run --rm \
+        docker compose run --rm \
           -e TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
           -e GOOGLE_SHEETS_CREDENTIALS_JSON="$GOOGLE_SHEETS_CREDENTIALS_JSON" \
           property-scraper python src/main.py --test-config --sheets-url "$GOOGLE_SHEETS_URL"
         
     - name: Run property scraper
       run: |
-        docker-compose run --rm \
+        docker compose run --rm \
           -e TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
           -e GOOGLE_SHEETS_CREDENTIALS_JSON="$GOOGLE_SHEETS_CREDENTIALS_JSON" \
           property-scraper python src/main.py --run-once --sheets-url "$GOOGLE_SHEETS_URL"
