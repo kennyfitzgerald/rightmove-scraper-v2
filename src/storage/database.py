@@ -52,10 +52,10 @@ class PropertyStorage:
             return False
         create_sql = row[0]
         # If it already mentions the composite UNIQUE, no migration needed
-        if "UNIQUE(property_url, search_config_id)" in create_sql.replace(" ", ""):
+        if "UNIQUE(property_url,search_config_id)" in create_sql.replace(" ", ""):
             return False
-        # If UNIQUE(property_url) is present, we need to migrate
-        return "UNIQUE(property_url)" in create_sql.replace(" ", "")
+        # If table exists without composite UNIQUE constraint, migrate
+        return True
 
     def _migrate_unique_constraint(self, conn: sqlite3.Connection):
         logger.warning("Migrating seen_properties to composite UNIQUE(property_url, search_config_id)")
