@@ -6,6 +6,7 @@ import os
 import logging
 import requests
 import csv
+import hashlib
 from io import StringIO
 from typing import List, Dict, Any
 from dataclasses import dataclass
@@ -110,7 +111,7 @@ class GoogleSheetsConfig:
                         max_price_pp=max_price_pp,
                         active=active,
                         description=record.get('description', ''),
-                        config_id=f"config_{i}_{hash(record.get('url', ''))}"
+                        config_id=f"config_{i}_{hashlib.md5(record.get('url', '').encode()).hexdigest()[:8]}"
                     )
                     
                     # Validate required fields
