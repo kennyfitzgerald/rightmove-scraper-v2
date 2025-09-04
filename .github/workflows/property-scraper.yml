@@ -31,14 +31,45 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Check if rebuild needed
+        id: check-rebuild
+        run: |
+          # Check if requirements.txt or Dockerfile changed in recent commits
+          if git diff --name-only HEAD~1 HEAD | grep -E "(requirements\.txt|Dockerfile)" || [ "${{ github.event.inputs.reset_db }}" = "true" ]; then
+            echo "rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "rebuild=false" >> $GITHUB_OUTPUT
+          fi
+
       # Fresh build only when resetting (optional but helpful)
       - name: Build Docker image
         run: |
           if [ "${{ github.event.inputs.reset_db }}" = "true" ]; then
             docker compose build --no-cache --pull property-scraper
+          elif [ "${{ steps.check-rebuild.outputs.rebuild }}" = "true" ]; then
+            BUILDX_CACHE_FROM="type=local,src=/tmp/.buildx-cache" \
+            BUILDX_CACHE_TO="type=local,dest=/tmp/.buildx-cache-new,mode=max" \
+            docker compose build property-scraper
           else
+            # Try to use cached image, fallback to build if not available
+            BUILDX_CACHE_FROM="type=local,src=/tmp/.buildx-cache" \
+            BUILDX_CACHE_TO="type=local,dest=/tmp/.buildx-cache-new,mode=max" \
             docker compose build property-scraper
           fi
+          
+      - name: Move cache
+        if: github.event.inputs.reset_db != 'true'
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
 
       - name: Create data directory
         run: mkdir -p data
